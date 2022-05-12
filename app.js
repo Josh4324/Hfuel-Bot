@@ -1,8 +1,22 @@
 const { Telegraf } = require("telegraf");
 const axios = require("axios");
+const { BigNumber, ethers } = require("ethers");
+const hfuel = require("./abi");
 require("dotenv").config();
 
 const bot = new Telegraf(process.env.api);
+
+const provider = new ethers.providers.JsonRpcProvider(
+  "https://speedy-nodes-nyc.moralis.io/40a88f8745bc01d3bb660792/bsc/mainnet"
+);
+
+const signer = provider.getSigner("0x1443498Ef86df975D8A2b0B6a315fB9f49978998");
+
+const hfuelContract = new ethers.Contract(
+  "0xc8A79838D91f0136672b94ec843978B6Fa6DF07D",
+  hfuel.abi,
+  signer
+);
 
 bot.command("start", (ctx) => {
   console.log(ctx.from);
@@ -15,6 +29,12 @@ bot.command("start", (ctx) => {
 
 bot.command("price", async (ctx) => {
   console.log(ctx.from);
+  const info = await hfuelContract.contractInfo();
+  const users = Number(info._total_users);
+  const deposited = (Number(info._total_deposited) / 10 ** 18)
+    .toFixed(4)
+    .replace(/\d(?=(\d{3})+\.)/g, "$&,");
+  const txt = Number(info._total_txs);
   const detail = await axios.get(
     "https://api.pancakeswap.info/api/v2/tokens/0x157Ba4bBbb2bd7D59024143C2C9E08f6060717a6"
   );
@@ -30,7 +50,7 @@ bot.command("price", async (ctx) => {
   const hnwPrice = Number(hnw.data.data.price).toFixed(4);
   bot.telegram.sendMessage(
     ctx.chat.id,
-    `🔥HFUEL PRICE🔥 - 💲${price} \n🔥SK PRICE🔥 -        💲${skPrice} \n🔥HNW PRICE🔥 -    💲${hnwPrice}`,
+    `🔥HFUEL PRICE🔥 - 💲${price} \n🔥SK PRICE🔥 -        💲${skPrice} \n🔥HNW PRICE🔥 -    💲${hnwPrice} \n\n🔥Refinery Users🔥 -${users} \n🔥Deposited🔥 - ${deposited}\n🔥Txt🔥 - ${txt}`,
     `.`,
     {}
   );
