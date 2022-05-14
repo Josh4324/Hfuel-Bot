@@ -23,7 +23,7 @@ bot.command("start", (ctx) => {
   console.log(ctx.from);
   bot.telegram.sendMessage(
     ctx.chat.id,
-    "hello there! Welcome to my new telegram bot.",
+    "hello there! Welcome to HFUEL PRICE BOT.",
     {}
   );
 });
@@ -61,7 +61,7 @@ bot.command("price", async (ctx) => {
   );
 });
 
-bot.command("start", async (ctx) => {
+bot.command("cron", async (ctx) => {
   console.log(ctx.from);
 
   cron.schedule("*/5 * * * *", async () => {
