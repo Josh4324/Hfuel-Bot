@@ -3,6 +3,7 @@ const axios = require("axios");
 const { BigNumber, ethers } = require("ethers");
 const hfuel = require("./abi");
 require("dotenv").config();
+const cron = require("node-cron");
 
 const bot = new Telegraf(process.env.api);
 
@@ -30,11 +31,15 @@ bot.command("start", (ctx) => {
 bot.command("price", async (ctx) => {
   console.log(ctx.from);
   const info = await hfuelContract.contractInfo();
-  const users = Number(info._total_users);
+  const users = Number(info._total_users)
+    .toFixed(1)
+    .replace(/\d(?=(\d{3})+\.)/g, "$&,");
   const deposited = (Number(info._total_deposited) / 10 ** 18)
     .toFixed(4)
     .replace(/\d(?=(\d{3})+\.)/g, "$&,");
-  const txt = Number(info._total_txs);
+  const txt = Number(info._total_txs)
+    .toFixed(1)
+    .replace(/\d(?=(\d{3})+\.)/g, "$&,");
   const detail = await axios.get(
     "https://api.pancakeswap.info/api/v2/tokens/0x157Ba4bBbb2bd7D59024143C2C9E08f6060717a6"
   );
@@ -50,10 +55,52 @@ bot.command("price", async (ctx) => {
   const hnwPrice = Number(hnw.data.data.price).toFixed(4);
   bot.telegram.sendMessage(
     ctx.chat.id,
-    `🔥HFUEL PRICE🔥 - 💲${price} \n🔥SK PRICE🔥 -        💲${skPrice} \n🔥HNW PRICE🔥 -    💲${hnwPrice} \n\n🔥Refinery Users🔥 -${users} \n🔥Deposited🔥 - ${deposited}\n🔥Txt🔥 - ${txt}`,
+    `🔥HFUEL PRICE🔥 - 💰${price} \n🦸‍♂️SK PRICE -        💰${skPrice} \n👨‍💼HNW PRICE  -    💰${hnwPrice} \n\n👤 Refinery  -${users} \n🔥Deposited - ${deposited}\n🔥Txns - ${txt}`,
     `.`,
     {}
   );
+});
+
+bot.command("start", async (ctx) => {
+  console.log(ctx.from);
+
+  cron.schedule("*/5 * * * *", async () => {
+    console.log("running a task every 5 minute");
+
+    const info = await hfuelContract.contractInfo();
+    const users = Number(info._total_users)
+      .toFixed(1)
+      .replace(/\d(?=(\d{3})+\.)/g, "$&,");
+    const deposited = (Number(info._total_deposited) / 10 ** 18)
+      .toFixed(4)
+      .replace(/\d(?=(\d{3})+\.)/g, "$&,");
+    const txt = Number(info._total_txs)
+      .toFixed(1)
+      .replace(/\d(?=(\d{3})+\.)/g, "$&,");
+    const detail = await axios.get(
+      "https://api.pancakeswap.info/api/v2/tokens/0x157Ba4bBbb2bd7D59024143C2C9E08f6060717a6"
+    );
+    const sk = await axios.get(
+      "https://api.pancakeswap.info/api/v2/tokens/0x5755e18d86c8a6d7a6e25296782cb84661e6c106"
+    );
+    const hnw = await axios.get(
+      "https://api.pancakeswap.info/api/v2/tokens/0x8173CcC721111b5a93CE7fa6fEc0fc077B58B1B7"
+    );
+
+    const dt = new Date();
+    const day = dt.toLocaleDateString();
+    const time = dt.toLocaleTimeString();
+
+    const price = Number(detail.data.data.price).toFixed(4);
+    const skPrice = Number(sk.data.data.price).toFixed(4);
+    const hnwPrice = Number(hnw.data.data.price).toFixed(4);
+    bot.telegram.sendMessage(
+      ctx.chat.id,
+      `Updated: ${day} ${time}\n\n🔥HFUEL PRICE🔥 - 💰${price} \n🦸‍♂️SK PRICE -        💰${skPrice} \n👨‍💼HNW PRICE  -    💰${hnwPrice} \n\n👤 Refinery  -${users} \n🔥Deposited - ${deposited}\n🔥Txns - ${txt}`,
+      `.`,
+      {}
+    );
+  });
 });
 
 bot.launch();
